@@ -63,7 +63,7 @@
         Then paste this in their respective variable in the `credentials.yml` file.
     
     2. Now run the command as described in task 5 again.
-    3. Trigger `Infra` and `Deploy` once more to make use of the new Graphite variables.
+    3. Trigger `Infra` once more to make use of the new Graphite variables.
 8. Access the application
     1. Access the application by hitting `Open App` on the `Ci application inside Heroku.`
         1. Remember to add `api/pokemon` to the url after hitting `Open App`. 
