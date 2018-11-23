@@ -1,0 +1,92 @@
+jobs:
+# Replace params / app_name with your heroku app name
+
+- name: build
+  plan:
+    - aggregate:
+      - get: pokemon-app
+        trigger: true
+      - get: exam-infra-master
+    - task: mvn_build
+      file: exam-infra-master/concourse/java/task.yml
+      input_mapping: {source: pokemon-app}
+    - put: docker-image-app
+      params:
+        build: jar-file
+
+- name: deploy-app
+  plan:
+  - aggregate:
+    - get: exam-infra-master
+    - get: docker-image-app
+      trigger: true
+      passed: [build]
+
+  - task: push_to_heroku
+    file: exam-infra-master/concourse/docker/docker_deploy.yml
+    params:
+      app_name: ((heroku_app_name))-app-ci
+      heroku_email: ((heroku_email))
+      heroku_api_token: ((heroku_api_key))
+
+
+- name: infra
+  plan:
+  - aggregate:
+    - get: exam-infra-master
+  - task: apply
+    file: exam-infra-master/concourse/terraform/task.yml
+    input_mapping: {source: exam-infra-master}
+    params:
+      github_token: ((github_token))
+      heroku_api_key: ((heroku_api_key))
+      statuscake_api_key: ((statuscake_api_key))
+      command: apply
+      directories: |
+          terraform
+  - put: exam-infra-master
+    params:
+      repository: with-state
+      rebase: true
+
+- name: deploy-heroku-config-vars
+  plan:
+  - aggregate:
+    - get: exam-infra-master
+      passed: [infra]
+      trigger: true
+  - task: push-config
+    file: exam-infra-master/concourse/heroku/task.yml
+    input_mapping: {source: exam-infra-master}
+    params:
+      app_name: ((heroku_app_name))
+      heroku_email: ((heroku_email))
+      heroku_api_token: ((heroku_api_key))
+      heroku_graphite_ci: ((heroku_graphite_ci))
+      heroku_graphite_staging: ((heroku_graphite_staging))
+      heroku_graphite_production: ((heroku_graphite_production))
+
+resources:
+
+- name: docker-image-app
+  type: docker-image
+  source:
+    repository: registry.heroku.com/((heroku_app_name))-app-ci/web
+    username: ((heroku_email))
+    password: ((heroku_api_key))
+
+# Replace with your own repository
+- name: pokemon-app
+  type: git
+  source:
+      uri: git@github.com:findus1994/DevOps2018.git
+      branch: master
+      private_key: ((deploy_key_app))
+
+# Replace with your own repository
+- name: exam-infra-master
+  type: git
+  source:
+      uri: git@github.com:findus1994/DevOpsInfra2018.git
+      branch: master
+      private_key: ((deploy_key_infra))

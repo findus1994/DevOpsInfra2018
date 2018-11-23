@@ -1,0 +1,37 @@
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: psharkey/heroku-cli
+    tag: "latest"
+
+inputs:
+- name: source
+
+params:
+  heroku_email:
+  heroku_api_token:
+  app_name:
+  heroku_graphite_ci:
+  heroku_graphite_staging:
+  heroku_graphite_production:
+
+
+run:
+  path: sh
+  dir: source
+  args:
+  - -exc
+  - |
+    cat > /root/.netrc <<EOF
+    machine api.heroku.com
+        login ${heroku_email}
+        password ${heroku_api_token}
+    machine git.heroku.com
+        login ${heroku_email}
+        password ${heroku_api_token}
+    EOF
+    heroku config:set GRAPHITE_HOST=${heroku_graphite_ci} -a ${app_name}-app-ci
+    heroku config:set GRAPHITE_HOST=${heroku_graphite_staging} -a ${app_name}-app-staging
+    heroku config:set GRAPHITE_HOST=${heroku_graphite_production} -a ${app_name}-app-production
