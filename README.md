@@ -69,6 +69,8 @@
         1. Remember to add `api/pokemon` to the url after hitting `Open App`. 
     2. You will as well be able to see all the apps in the pipeline in your StatusCake page.
         1. Here you can monitor your applications.
+    3. When using this api you can use the DTO object you retrive from a GET request as a schama for making a
+    POST or PUT request. You can use tools like Postman to make these requests.
     
 
 ### Tasks Done
